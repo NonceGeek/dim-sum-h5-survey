@@ -4,22 +4,24 @@ import { supabase } from "./supabase.js";
 const PHOTO_BUCKET = "liwan-photo";
 const EVENT_ID = "liwan_building";
 const BASIC_INFO_KEY = "liwan_building_basic_info";
-const PHOTO_ROLES = ["facade", "detail1", "detail2"];
-const PHOTO_CONTENT_NAMES = {
-  facade: "photoContentFacade",
-  detail1: "photoContentDetail1",
-  detail2: "photoContentDetail2",
-};
-const PHOTO_FILE_NAMES = {
-  facade: "photoFacade",
-  detail1: "photoDetail1",
-  detail2: "photoDetail2",
-};
-const PHOTO_EMPTY_LABEL = {
-  facade: `<span class="plus">＋</span><span class="ptile-label">点击上传<br />必传</span>`,
-  detail1: `<span class="plus">＋</span><span class="ptile-label">点击上传<br />选填</span>`,
-  detail2: `<span class="plus">＋</span><span class="ptile-label">点击上传<br />选填</span>`,
-};
+const PHOTO_CONTENT_OPTIONS = [
+  "正立面",
+  "侧立面",
+  "入口",
+  "门窗",
+  "阳台",
+  "柱头",
+  "彩绘",
+  "灰塑",
+  "石雕",
+  "砖雕",
+  "木雕",
+  "其他",
+];
+const PHOTO_EMPTY_REQUIRED =
+  '<span class="plus">＋</span><span class="ptile-label">点击上传<br />必传</span>';
+const PHOTO_EMPTY_OPTIONAL =
+  '<span class="plus">＋</span><span class="ptile-label">点击上传<br />选填</span>';
 
 const form = document.getElementById("surveyForm");
 const submitBtn = document.getElementById("submitBtn");
@@ -33,12 +35,11 @@ const regionOutsideRadio = document.getElementById("regionOutsideRadio");
 const regionOutsideInput = document.getElementById("regionOutsideInput");
 const regionOverseasRadio = document.getElementById("regionOverseasRadio");
 const regionOverseasInput = document.getElementById("regionOverseasInput");
+const photoList = document.getElementById("photoList");
+const photoBlockTemplate = document.getElementById("photoBlockTemplate");
+const addPhotoBtn = document.getElementById("addPhotoBtn");
 
-const PHOTO_STORY_NAMES = {
-  facade: "storyFacade",
-  detail1: "storyDetail1",
-  detail2: "storyDetail2",
-};
+let photoSeq = 0;
 
 const REGION_EXTRA_FIELDS = [
   { value: "省外", radio: regionOutsideRadio, input: regionOutsideInput },
@@ -191,14 +192,17 @@ function toYYMMDD(isoDate) {
   return isoDate.slice(2, 4) + isoDate.slice(5, 7) + isoDate.slice(8, 10);
 }
 
-function getPhotoContent(role) {
-  const name = PHOTO_CONTENT_NAMES[role];
-  return Array.from(form.querySelectorAll(`input[name="${name}"]:checked`)).map(
-    (el) => el.value
-  );
+function getPhotoBlocks() {
+  return Array.from(photoList.querySelectorAll(".photo-block"));
 }
 
-function buildPhotoTitle(role) {
+function getPhotoContent(block) {
+  return Array.from(
+    block.querySelectorAll(".photo-content-group input:checked")
+  ).map((el) => el.value);
+}
+
+function buildPhotoTitle(block) {
   const parts = [];
   const yymmdd = toYYMMDD(collectDateInput.value.trim());
   if (yymmdd) parts.push(yymmdd);
@@ -209,80 +213,168 @@ function buildPhotoTitle(role) {
   const buildingName = buildingNameInput.value.trim();
   if (buildingName) parts.push(buildingName);
 
-  const photoContent = getPhotoContent(role);
+  const photoContent = getPhotoContent(block);
   if (photoContent.length > 0) parts.push(photoContent.join("/"));
 
   return parts.join("-") || "—";
 }
 
+function updatePhotoTitle(block) {
+  const el = block.querySelector(".photo-title-text");
+  if (el) el.textContent = buildPhotoTitle(block);
+}
+
 function updateAllPhotoTitles() {
-  PHOTO_ROLES.forEach((role) => {
-    const el = document.querySelector(`[data-photo-title="${role}"]`);
-    if (el) el.textContent = buildPhotoTitle(role);
+  getPhotoBlocks().forEach(updatePhotoTitle);
+}
+
+function syncPhotoBlockLabels() {
+  getPhotoBlocks().forEach((block, index) => {
+    const n = index + 1;
+    const required = index === 0;
+    const label = block.querySelector(".photo-block-label");
+    const storyLabel = block.querySelector(".photo-story-label");
+    const tile = block.querySelector(".photo-tile");
+    const removeBtn = block.querySelector(".photo-remove-btn");
+    const storyError = block.querySelector(".photo-story-error");
+
+    if (label) {
+      label.classList.toggle("required", required);
+      label.innerHTML = required
+        ? `照片 ${n}`
+        : `照片 ${n} <span class="opt-tag">选填</span>`;
+    }
+
+    if (storyLabel) {
+      storyLabel.classList.toggle("required", required);
+      storyLabel.innerHTML = required
+        ? "故事线索"
+        : '故事线索 <span class="opt-tag">上传照片后必填</span>';
+    }
+
+    if (tile) {
+      tile.classList.toggle("must", required);
+      if (!tile.classList.contains("filled")) {
+        tile.querySelector(".ptile-inner").innerHTML = required
+          ? PHOTO_EMPTY_REQUIRED
+          : PHOTO_EMPTY_OPTIONAL;
+      }
+    }
+
+    if (removeBtn) removeBtn.hidden = required;
+    if (storyError) storyError.dataset.field = `story${n}`;
   });
 }
 
-collectDateInput.value = todayISODate();
-loadBasicInfo();
-bindBasicInfoAutosave();
-updateAllPhotoTitles();
+function clearPhotoPreview(tile) {
+  if (tile?.dataset.previewUrl) {
+    URL.revokeObjectURL(tile.dataset.previewUrl);
+    delete tile.dataset.previewUrl;
+  }
+}
 
-[collectDateInput, streetCodeInput, buildingNameInput].forEach((el) => {
-  el.addEventListener("input", updateAllPhotoTitles);
-  el.addEventListener("change", updateAllPhotoTitles);
-});
+function bindPhotoBlock(block) {
+  const fileInput = block.querySelector(".photo-input");
+  const tile = block.querySelector(".photo-tile");
+  const storyInput = block.querySelector(".photo-story-input");
+  const countEl = block.querySelector(".photo-story-count");
+  const removeBtn = block.querySelector(".photo-remove-btn");
 
-PHOTO_ROLES.forEach((role) => {
-  form.querySelectorAll(`input[name="${PHOTO_CONTENT_NAMES[role]}"]`).forEach((el) => {
-    el.addEventListener("change", updateAllPhotoTitles);
+  block.querySelectorAll(".photo-content-group input").forEach((el) => {
+    el.addEventListener("change", () => updatePhotoTitle(block));
   });
-});
 
-document.querySelectorAll(".photo-story-input").forEach((input) => {
-  const countId = input.dataset.storyCount;
-  const countEl = countId ? document.getElementById(countId) : null;
   const syncCount = () => {
-    if (countEl) countEl.textContent = String(input.value.length);
+    if (countEl) countEl.textContent = String(storyInput.value.length);
   };
   syncCount();
-  input.addEventListener("input", syncCount);
-});
+  storyInput.addEventListener("input", syncCount);
 
-document.querySelectorAll(".photo-input").forEach((input) => {
-  input.addEventListener("change", () => {
-    const tile = document.getElementById(input.dataset.tile);
-    if (!tile) return;
+  fileInput.addEventListener("change", () => {
+    clearPhotoPreview(tile);
     const inner = tile.querySelector(".ptile-inner");
-    const role = input.dataset.photo;
+    const isFirst = getPhotoBlocks()[0] === block;
 
-    if (tile.dataset.previewUrl) {
-      URL.revokeObjectURL(tile.dataset.previewUrl);
-      delete tile.dataset.previewUrl;
-    }
-
-    if (input.files && input.files[0]) {
-      const url = URL.createObjectURL(input.files[0]);
+    if (fileInput.files && fileInput.files[0]) {
+      const url = URL.createObjectURL(fileInput.files[0]);
       tile.dataset.previewUrl = url;
       tile.classList.add("filled");
       inner.innerHTML = `<img class="ptile-thumb" src="${url}" alt="预览" />`;
     } else {
       tile.classList.remove("filled");
-      inner.innerHTML = PHOTO_EMPTY_LABEL[role] || PHOTO_EMPTY_LABEL.detail1;
+      inner.innerHTML = isFirst ? PHOTO_EMPTY_REQUIRED : PHOTO_EMPTY_OPTIONAL;
     }
   });
-});
 
-function getPhotoFiles() {
-  return {
-    facade: form.querySelector(`input[name="${PHOTO_FILE_NAMES.facade}"]`).files?.[0] || null,
-    detail1: form.querySelector(`input[name="${PHOTO_FILE_NAMES.detail1}"]`).files?.[0] || null,
-    detail2: form.querySelector(`input[name="${PHOTO_FILE_NAMES.detail2}"]`).files?.[0] || null,
-  };
+  removeBtn.addEventListener("click", () => {
+    if (getPhotoBlocks().length <= 1) return;
+    clearPhotoPreview(tile);
+    block.remove();
+    syncPhotoBlockLabels();
+    updateAllPhotoTitles();
+  });
+}
+
+function addPhotoBlock() {
+  const fragment = photoBlockTemplate.content.cloneNode(true);
+  const block = fragment.querySelector(".photo-block");
+  photoSeq += 1;
+  const id = photoSeq;
+  block.dataset.photoIndex = String(id);
+
+  const contentGroup = block.querySelector(".photo-content-group");
+  const contentName = `photoContent${id}`;
+  PHOTO_CONTENT_OPTIONS.forEach((value) => {
+    const label = document.createElement("label");
+    label.className = "radio-item";
+    label.innerHTML = `<input type="checkbox" name="${contentName}" value="${value}" /><span>${value}</span>`;
+    contentGroup.appendChild(label);
+  });
+
+  const fileInput = block.querySelector(".photo-input");
+  fileInput.name = `photo${id}`;
+
+  const storyInput = block.querySelector(".photo-story-input");
+  storyInput.name = `story${id}`;
+  storyInput.id = `story${id}`;
+
+  photoList.appendChild(block);
+  bindPhotoBlock(block);
+  syncPhotoBlockLabels();
+  updatePhotoTitle(block);
+  return block;
+}
+
+function resetPhotoBlocks() {
+  getPhotoBlocks().forEach((block) => {
+    clearPhotoPreview(block.querySelector(".photo-tile"));
+  });
+  photoList.innerHTML = "";
+  photoSeq = 0;
+  addPhotoBlock();
+}
+
+function collectPhotoEntries() {
+  return getPhotoBlocks().map((block, index) => {
+    const n = index + 1;
+    const fileInput = block.querySelector(".photo-input");
+    const storyInput = block.querySelector(".photo-story-input");
+    const role = `photo${n}`;
+    return {
+      index: n,
+      role,
+      block,
+      file: fileInput.files?.[0] || null,
+      contents: getPhotoContent(block),
+      title: buildPhotoTitle(block),
+      story: (storyInput.value || "").trim(),
+    };
+  });
 }
 
 function getFormData() {
   const formData = new FormData(form);
-  const photos = getPhotoFiles();
+  const photoEntries = collectPhotoEntries();
   let region = formData.get("region") || "";
   if (region === "省外") {
     region = formatRegionValue("省外", formData.get("regionOutside"));
@@ -291,6 +383,18 @@ function getFormData() {
   } else if (region === "其他") {
     region = formatRegionValue("其他", formData.get("regionOther"));
   }
+
+  const photoContents = {};
+  const photoTitles = {};
+  const stories = {};
+  const photos = {};
+  photoEntries.forEach((entry) => {
+    photoContents[entry.role] = entry.contents;
+    photoTitles[entry.role] = entry.title;
+    stories[entry.role] = entry.story;
+    photos[entry.role] = entry.file;
+  });
+
   return {
     gender: formData.get("gender") || "",
     ageRange: formData.get("ageRange") || "",
@@ -300,21 +404,10 @@ function getFormData() {
     collectDate: (formData.get("collectDate") || "").trim(),
     streetCode: (formData.get("streetCode") || "").trim(),
     buildingName: (formData.get("buildingName") || "").trim(),
-    photoContents: {
-      facade: getPhotoContent("facade"),
-      detail1: getPhotoContent("detail1"),
-      detail2: getPhotoContent("detail2"),
-    },
-    photoTitles: {
-      facade: buildPhotoTitle("facade"),
-      detail1: buildPhotoTitle("detail1"),
-      detail2: buildPhotoTitle("detail2"),
-    },
-    stories: {
-      facade: (formData.get(PHOTO_STORY_NAMES.facade) || "").trim(),
-      detail1: (formData.get(PHOTO_STORY_NAMES.detail1) || "").trim(),
-      detail2: (formData.get(PHOTO_STORY_NAMES.detail2) || "").trim(),
-    },
+    photoEntries,
+    photoContents,
+    photoTitles,
+    stories,
     agree: formData.get("agree") === "on",
     photos,
   };
@@ -352,13 +445,16 @@ function validate(data) {
   if (!data.collectDate) errors.collectDate = "请选择采集日期";
   else if (!isValidCollectDate(data.collectDate))
     errors.collectDate = "请选择有效的采集日期";
-  if (!data.photos.facade) errors.photos = "请上传照片 1";
-  if (data.photos.facade && !data.stories.facade)
-    errors.storyFacade = "请填写照片 1 的故事线索";
-  if (data.photos.detail1 && !data.stories.detail1)
-    errors.storyDetail1 = "请填写照片 2 的故事线索";
-  if (data.photos.detail2 && !data.stories.detail2)
-    errors.storyDetail2 = "请填写照片 3 的故事线索";
+
+  const first = data.photoEntries[0];
+  if (!first?.file) errors.photos = "请上传照片 1";
+
+  data.photoEntries.forEach((entry) => {
+    if (entry.file && !entry.story) {
+      errors[`story${entry.index}`] = `请填写照片 ${entry.index} 的故事线索`;
+    }
+  });
+
   if (!data.agree) errors.agree = "请勾选原创与授权确认";
   return errors;
 }
@@ -371,21 +467,6 @@ function showErrors(errors) {
     const el = document.querySelector(`.error-msg[data-field="${field}"]`);
     if (el) el.textContent = msg;
   }
-}
-
-function resetPhotoTiles() {
-  PHOTO_ROLES.forEach((role) => {
-    const tileId =
-      role === "facade" ? "tileFacade" : role === "detail1" ? "tileDetail1" : "tileDetail2";
-    const tile = document.getElementById(tileId);
-    if (!tile) return;
-    if (tile.dataset.previewUrl) {
-      URL.revokeObjectURL(tile.dataset.previewUrl);
-      delete tile.dataset.previewUrl;
-    }
-    tile.classList.remove("filled");
-    tile.querySelector(".ptile-inner").innerHTML = PHOTO_EMPTY_LABEL[role];
-  });
 }
 
 function fileExtension(name, fallback = ".jpg") {
@@ -420,20 +501,13 @@ async function uploadPhoto(file, role, collectDate, autoTitle, story) {
   };
 }
 
-async function uploadAllPhotos(photos, photoTitles, stories, collectDate) {
+async function uploadAllPhotos(photoEntries, collectDate) {
   const jobs = [];
-  for (const role of PHOTO_ROLES) {
-    if (photos[role]) {
-      jobs.push(
-        uploadPhoto(
-          photos[role],
-          role,
-          collectDate,
-          photoTitles[role],
-          stories[role]
-        )
-      );
-    }
+  for (const entry of photoEntries) {
+    if (!entry.file) continue;
+    jobs.push(
+      uploadPhoto(entry.file, entry.role, collectDate, entry.title, entry.story)
+    );
   }
   return Promise.all(jobs);
 }
@@ -451,12 +525,7 @@ async function handleSubmit(e) {
 
   let uploadedPhotos;
   try {
-    uploadedPhotos = await uploadAllPhotos(
-      data.photos,
-      data.photoTitles,
-      data.stories,
-      data.collectDate
-    );
+    uploadedPhotos = await uploadAllPhotos(data.photoEntries, data.collectDate);
   } catch (err) {
     submitBtn.disabled = false;
     submitBtn.textContent = "提交问卷";
@@ -502,14 +571,25 @@ async function handleSubmit(e) {
   saveBasicInfo();
   form.reset();
   collectDateInput.value = todayISODate();
-  document.querySelectorAll(".photo-story-input").forEach((input) => {
-    const countId = input.dataset.storyCount;
-    const countEl = countId ? document.getElementById(countId) : null;
-    if (countEl) countEl.textContent = "0";
-  });
-  resetPhotoTiles();
+  resetPhotoBlocks();
   loadBasicInfo();
   updateAllPhotoTitles();
 }
+
+collectDateInput.value = todayISODate();
+loadBasicInfo();
+bindBasicInfoAutosave();
+addPhotoBlock();
+updateAllPhotoTitles();
+
+[collectDateInput, streetCodeInput, buildingNameInput].forEach((el) => {
+  el.addEventListener("input", updateAllPhotoTitles);
+  el.addEventListener("change", updateAllPhotoTitles);
+});
+
+addPhotoBtn.addEventListener("click", () => {
+  const block = addPhotoBlock();
+  block.scrollIntoView({ behavior: "smooth", block: "nearest" });
+});
 
 form.addEventListener("submit", handleSubmit);

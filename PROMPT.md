@@ -41,19 +41,20 @@ create a h5 page for survey: 荔湾历史建筑文化信息征集（见 `prototy
 
 ### Fields
 
-#### 1. 基础信息
-* 必填：性别、年龄段、熟悉的语言文化地区、联系电话
-* 选填：Email
-
-#### 2. 建筑基础信息
+#### 1. 建筑基础信息
 * 必填：采集日期（年月日选择器，默认当天）
 * 选填：所处街巷编号、建筑名称
 
-#### 3. 照片与故事
-* 必填：完整立面照片、照片 1 故事线索、原创与授权确认
-* 选填：局部特写（最多 2 张）；若上传照片 2/3，需填写对应故事线索
+#### 2. 照片与故事
+* 默认仅显示 1 个上传框；点击「新增照片」可继续添加，数量不限
+* 必填：照片 1、照片 1 故事线索
+* 选填：照片 2 及以后；若已上传，需填写对应故事线索；可「移除」多余空框
 * 每张照片可单独选择「照片内容」、填写「故事线索」，并自动生成标题：`YYMMDD-街巷编号-建筑名称-立面/要素`
 * 图片上传至 Supabase Storage bucket：`liwan-photo`
-* 路径：`liwan_building/{YYMMDD}/{timestamp}-{role}.{ext}`（仅 ASCII，中文标题写在 metadata）
+* 路径：`liwan_building/{YYMMDD}/{timestamp}-photo{N}.{ext}`（仅 ASCII，中文标题写在 metadata）
 * `content.photoFiles` 含 `role / name / size / type / path / url / autoTitle / story`
-* `content.photoContents` / `content.photoTitles` / `content.stories` 为各照片的内容、标题与故事
+* `content.photoContents` / `content.photoTitles` / `content.stories` 按 `photo1`、`photo2`… 存储
+
+#### 3. 基础信息
+* 必填：性别、年龄段、熟悉的语言文化地区、联系电话、原创与授权确认
+* 选填：Email
