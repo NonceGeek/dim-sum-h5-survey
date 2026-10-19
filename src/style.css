@@ -167,6 +167,248 @@ body {
   line-height: 1.75 !important;
 }
 
+.example-photos-sec {
+  margin: 14px 0 18px;
+}
+
+.example-photos-sec .form-label {
+  margin-bottom: 2px;
+}
+
+.example-photos-sec .form-desc {
+  margin-bottom: 10px;
+}
+
+.example-photo-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.example-photo-link {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--green-deep);
+  font-family: var(--sans);
+  font-size: 16px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.example-photo-link:hover {
+  border-color: var(--green);
+  background: var(--green-tint);
+}
+
+.example-photo-link:active {
+  transform: translateY(1px);
+}
+
+.example-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+}
+
+.example-modal[hidden] {
+  display: none;
+}
+
+.example-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(36, 40, 31, 0.55);
+}
+
+.example-modal-panel {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: min(520px, calc(100vw - 24px));
+  max-height: calc(100vh - 32px);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: popIn 0.25s ease;
+}
+
+.example-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.example-modal-title {
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--ink);
+}
+
+.example-modal-close {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink2);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.example-modal-close:hover {
+  background: var(--green-tint);
+  color: var(--ink);
+}
+
+.example-modal-body {
+  padding: 12px;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.example-modal-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  background: var(--card);
+}
+
+.inline-guide-link {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--green-deep);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.inline-guide-link:hover {
+  color: var(--green);
+}
+
+.guide-modal-panel {
+  max-width: min(560px, calc(100vw - 24px));
+}
+
+.guide-modal-body {
+  max-height: min(72vh, 640px);
+}
+
+.guide-lead {
+  margin: 0 0 14px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--ink);
+}
+
+.guide-checker {
+  margin: 0 0 18px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.guide-file-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  padding: 10px 14px;
+  border: 1.5px dashed var(--green);
+  border-radius: 10px;
+  background: rgba(30, 91, 77, 0.06);
+  color: var(--green-deep);
+  font-family: var(--sans);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.guide-file-btn input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.guide-check-result {
+  margin: 12px 0 0;
+  font-size: 15.5px;
+  line-height: 1.65;
+  color: var(--ink);
+}
+
+.guide-check-result.ok {
+  color: var(--green-deep);
+}
+
+.guide-check-result.fail {
+  color: #a33a28;
+}
+
+.guide-block {
+  margin: 0 0 16px;
+}
+
+.guide-block:last-child {
+  margin-bottom: 4px;
+}
+
+.guide-block h3 {
+  margin: 0 0 8px;
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.guide-block ol {
+  margin: 0;
+  padding-left: 1.25em;
+  font-size: 15.5px;
+  line-height: 1.75;
+  color: var(--ink);
+}
+
+.guide-block li {
+  margin-bottom: 4px;
+}
+
+.guide-block code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.92em;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--green-tint);
+}
+
 .time-list {
   list-style: none;
   margin: 0 0 8px;

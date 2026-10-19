@@ -593,3 +593,134 @@ addPhotoBtn.addEventListener("click", () => {
 });
 
 form.addEventListener("submit", handleSubmit);
+
+function bindExamplePhotos() {
+  const modal = document.getElementById("exampleModal");
+  const modalImg = document.getElementById("exampleModalImg");
+  const modalTitle = document.getElementById("exampleModalTitle");
+  const closeBtn = document.getElementById("exampleModalClose");
+  if (!modal || !modalImg || !closeBtn) return;
+
+  let lastFocus = null;
+
+  function closeModal() {
+    modal.hidden = true;
+    modal.setAttribute("aria-hidden", "true");
+    modalImg.removeAttribute("src");
+    modalImg.alt = "";
+    document.body.style.overflow = "";
+    if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
+  }
+
+  function openModal(src, label) {
+    lastFocus = document.activeElement;
+    modalTitle.textContent = label || "示例照片";
+    modalImg.src = src;
+    modalImg.alt = label || "示例照片";
+    modal.hidden = false;
+    modal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+    closeBtn.focus();
+  }
+
+  document.querySelectorAll(".example-photo-link").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const src = btn.dataset.exampleSrc;
+      if (!src) return;
+      openModal(src, btn.textContent.trim());
+    });
+  });
+
+  closeBtn.addEventListener("click", closeModal);
+  modal.querySelectorAll("[data-close-example]").forEach((el) => {
+    el.addEventListener("click", closeModal);
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !modal.hidden) closeModal();
+  });
+}
+
+bindExamplePhotos();
+
+function bindPixelGuide() {
+  const openBtn = document.getElementById("pixelGuideBtn");
+  const modal = document.getElementById("pixelGuideModal");
+  const closeBtn = document.getElementById("pixelGuideClose");
+  const fileInput = document.getElementById("pixelCheckInput");
+  const resultEl = document.getElementById("pixelCheckResult");
+  if (!openBtn || !modal || !closeBtn) return;
+
+  let lastFocus = null;
+  let objectUrl = "";
+
+  function closeModal() {
+    modal.hidden = true;
+    modal.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+    if (objectUrl) {
+      URL.revokeObjectURL(objectUrl);
+      objectUrl = "";
+    }
+    if (fileInput) fileInput.value = "";
+    if (resultEl) {
+      resultEl.hidden = true;
+      resultEl.textContent = "";
+      resultEl.classList.remove("ok", "fail");
+    }
+    if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
+  }
+
+  function openModal() {
+    lastFocus = document.activeElement;
+    modal.hidden = false;
+    modal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+    closeBtn.focus();
+  }
+
+  openBtn.addEventListener("click", openModal);
+  closeBtn.addEventListener("click", closeModal);
+  modal.querySelectorAll("[data-close-pixel-guide]").forEach((el) => {
+    el.addEventListener("click", closeModal);
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !modal.hidden) closeModal();
+  });
+
+  if (fileInput && resultEl) {
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files?.[0];
+      resultEl.classList.remove("ok", "fail");
+      if (!file) {
+        resultEl.hidden = true;
+        resultEl.textContent = "";
+        return;
+      }
+
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      objectUrl = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+        const longSide = Math.max(w, h);
+        const ok = longSide >= 3000;
+        resultEl.hidden = false;
+        resultEl.classList.add(ok ? "ok" : "fail");
+        resultEl.textContent = ok
+          ? `尺寸 ${w} × ${h} 像素，长边 ${longSide}，已满足 ≥ 3000 要求。`
+          : `尺寸 ${w} × ${h} 像素，长边 ${longSide}，未达到 3000，请换更高分辨率原图。`;
+      };
+      img.onerror = () => {
+        resultEl.hidden = false;
+        resultEl.classList.add("fail");
+        resultEl.textContent = "无法读取该图片，请换一张再试。";
+      };
+      img.src = objectUrl;
+    });
+  }
+}
+
+bindPixelGuide();

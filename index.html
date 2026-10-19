@@ -34,6 +34,9 @@
       <p>
         请提交原创建筑外观摄影作品，拍摄对象仅限荔湾区范围内的历史建筑、传统风貌建筑、不可移动文物及历史文化街区，需至少提交一张完整立面图，可补充建筑构件、工艺的特写照片，清晰呈现建筑细节，并提供建筑相关说明及故事线索。
       </p>
+      <p>
+        💡表单中，标记 * 号的内容为必填，其他为选填。
+      </p>
     </section>
 
     <section class="info-sec">
@@ -90,7 +93,38 @@
       <!-- —— 2. 照片与故事 —— -->
       <section class="form-section">
         <h3 class="form-section-title"><i></i>照片与故事</h3>
-        <p class="form-desc section-desc">长边不低于 6000 像素；至少上传 1 张。点击「新增照片」可继续添加，数量不限。每张照片可单独选择内容，并自动生成标题。</p>
+        <p class="form-desc section-desc">
+          长边不低于 3000 像素（
+          <button type="button" class="inline-guide-link" id="pixelGuideBtn">💡如何查看图片像素？</button>
+          ）；至少上传 1 张。点击「新增照片」可继续添加，数量不限。每张照片可单独选择内容，并自动生成标题。
+        </p>
+
+        <div class="example-photos-sec">
+          <p class="form-desc"><b>💡示例照片</b></p>
+          <p class="form-desc">以下为参考示例，点击查看大图👇</p>
+          <ul class="example-photo-links">
+            <li>
+              <button type="button" class="example-photo-link" data-example-src="https://dimsum-utils.oss-cn-guangzhou.aliyuncs.com/building-pics/1.jpg">
+                示例 1
+              </button>
+            </li>
+            <li>
+              <button type="button" class="example-photo-link" data-example-src="https://dimsum-utils.oss-cn-guangzhou.aliyuncs.com/building-pics/2.jpg">
+                示例 2
+              </button>
+            </li>
+            <li>
+              <button type="button" class="example-photo-link" data-example-src="https://dimsum-utils.oss-cn-guangzhou.aliyuncs.com/building-pics/3.jpg">
+                示例 3
+              </button>
+            </li>
+            <li>
+              <button type="button" class="example-photo-link" data-example-src="https://dimsum-utils.oss-cn-guangzhou.aliyuncs.com/building-pics/4.jpg">
+                示例 4
+              </button>
+            </li>
+          </ul>
+        </div>
 
         <div id="photoList" class="photo-list"></div>
 
@@ -311,6 +345,77 @@
 
       <button type="submit" class="submit-btn" id="submitBtn">提交问卷</button>
     </form>
+
+    <div class="example-modal" id="exampleModal" hidden aria-hidden="true">
+      <div class="example-modal-backdrop" data-close-example tabindex="-1"></div>
+      <div class="example-modal-panel" role="dialog" aria-modal="true" aria-labelledby="exampleModalTitle">
+        <div class="example-modal-head">
+          <h2 id="exampleModalTitle" class="example-modal-title">示例照片</h2>
+          <button type="button" class="example-modal-close" id="exampleModalClose" aria-label="关闭">×</button>
+        </div>
+        <div class="example-modal-body">
+          <img id="exampleModalImg" class="example-modal-img" src="" alt="" />
+        </div>
+      </div>
+    </div>
+
+    <div class="example-modal" id="pixelGuideModal" hidden aria-hidden="true">
+      <div class="example-modal-backdrop" data-close-pixel-guide tabindex="-1"></div>
+      <div class="example-modal-panel guide-modal-panel" role="dialog" aria-modal="true" aria-labelledby="pixelGuideTitle">
+        <div class="example-modal-head">
+          <h2 id="pixelGuideTitle" class="example-modal-title">如何查看图片像素</h2>
+          <button type="button" class="example-modal-close" id="pixelGuideClose" aria-label="关闭">×</button>
+        </div>
+        <div class="example-modal-body guide-modal-body">
+          <p class="guide-lead">投稿要求：图片<strong>长边不低于 3000 像素</strong>（宽或高中较大的一边）。</p>
+
+          <div class="guide-checker">
+            <div class="form-label">本页快速检测</div>
+            <p class="form-desc">选择本地图片，即可查看像素尺寸（不会上传到服务器）</p>
+            <label class="guide-file-btn">
+              <input type="file" id="pixelCheckInput" accept="image/*" />
+              选择图片查看像素
+            </label>
+            <p class="guide-check-result" id="pixelCheckResult" hidden></p>
+          </div>
+
+          <div class="guide-block">
+            <h3>iPhone / iPad</h3>
+            <ol>
+              <li>打开「照片」App，点开要查看的图片</li>
+              <li>向上滑动，或点右上角「ⓘ」信息按钮</li>
+              <li>在详情中查看分辨率，例如 <code>4032 × 3024</code></li>
+              <li>取较大数字：若 ≥ 3000，即满足长边要求</li>
+            </ol>
+          </div>
+
+          <div class="guide-block">
+            <h3>Android</h3>
+            <ol>
+              <li>打开「相册 / Google 相册」，点开图片</li>
+              <li>向上滑动，或点「⋮ → 详情 / 信息」</li>
+              <li>查看分辨率（宽 × 高），取较大一边与 3000 比较</li>
+            </ol>
+          </div>
+
+          <div class="guide-block">
+            <h3>电脑（Windows）</h3>
+            <ol>
+              <li>在文件上右键 →「属性」→「详细信息」</li>
+              <li>在「图像」项下查看「宽度」「高度」（单位为像素）</li>
+            </ol>
+          </div>
+
+          <div class="guide-block">
+            <h3>电脑（Mac）</h3>
+            <ol>
+              <li>在访达中选中图片，按 <code>Command + I</code> 查看简介</li>
+              <li>或用「预览」打开后，菜单「工具 → 显示检查器」查看像素尺寸</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div class="success-overlay" id="successOverlay">
       <div class="success-card">
