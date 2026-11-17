@@ -576,6 +576,25 @@ async function handleSubmit(e) {
   updateAllPhotoTitles();
 }
 
+function hideSuccessOverlay() {
+  successOverlay.classList.remove("show");
+}
+
+function bindSuccessActions() {
+  const againBtn = document.getElementById("successSubmitAgain");
+  const homeBtn = document.getElementById("successBackHome");
+
+  againBtn?.addEventListener("click", () => {
+    hideSuccessOverlay();
+    form.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  homeBtn?.addEventListener("click", () => {
+    hideSuccessOverlay();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+}
+
 collectDateInput.value = todayISODate();
 loadBasicInfo();
 bindBasicInfoAutosave();
@@ -593,6 +612,7 @@ addPhotoBtn.addEventListener("click", () => {
 });
 
 form.addEventListener("submit", handleSubmit);
+bindSuccessActions();
 
 function bindExamplePhotos() {
   const modal = document.getElementById("exampleModal");
